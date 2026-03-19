@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Track U</title>
+
+  <style>
+  body {
+  font-family: system-ui;
+  background: linear-gradient(135deg, #ff7e00, #ff3d00);
+  color: white;
+  text-align: center;
+  margin-top: 100px;
+}
+
+h1 {
+  font-size: 40px;
+}
+
+button {
+  padding: 12px 25px;
+  font-size: 18px;
+  margin: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#startBtn {
+  background: #00c853;
+  color: white;
+}
+
+#stopBtn {
+  background: #d50000;
+  color: white;
+}
+
+#status {
+  margin-top: 20px;
+  font-size: 20px;
+}
+#progressContainer {
+  width: 80%;
+  height: 20px;
+  background: rgba(255,255,255,0.2);
+  margin: 20px auto;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#progressBar {
+  height: 100%;
+  width: 0%;
+  background: #00e676;
+  transition: width 0.5s ease;
+}
+#app.focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  color: white;
+  z-index: 9999;
+}
+
+#app.focus #startBtn,
+#app.focus #goal,
+#app.focus #progressContainer {
+  display: none;
+}
+
+#app.focus #hours {
+  font-size: 70px;
+  margin-top: 35vh;
+}
+
+#app.focus h1 {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  text-align: center;
+}
+#app.focus #status {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+}
+#app.focus {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+#hours {
+  text-shadow: 0 0 20px rgba(255,255,255,0.7);
+}
+#app.focus #stopBtn {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 30px;
+  font-size: 20px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 10px;
+}
+  </style>
+
+</head>
+
+<body>
+
+  <div id="app">
+  <h1>🔥 Track U</h1>
+
+<h2 id="hours">0.00 hrs</h2>
+<p id="goal">Today: 0 / 8 hrs</p>
+<div id="progressContainer">
+  <div id="progressBar"></div>
+</div>
+
+<button id="startBtn" onclick="startStudy()">Start</button>
+<button id="stopBtn" onclick="stopStudy()">Stop</button>
+
+<p id="status">Status: Idle</p>
+  <p id="streak">🔥 Streak: 0</p>
+  </div>
+<audio id="rainSound" loop>
+  <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+</audio>
+
+  <script>
+  let streak = localStorage.getItem("streak") 
+  ? parseInt(localStorage.getItem("streak")) 
+  : 0;
+
+let lastDate = localStorage.getItem("lastDate") || "";
+
+document.getElementById("streak").innerText =
+  "🔥 Streak: " + streak;
+let totalToday = 0;
+let startTime = 0;
+let interval;
+let goal = 8;
+let savedTotal = localStorage.getItem("totalToday");
+
+if (savedTotal) {
+  totalToday = parseFloat(savedTotal);
+
+  document.getElementById("hours").innerText =
+    totalToday.toFixed(2) + " hrs";
+
+  document.getElementById("goal").innerText =
+    "Today: " + totalToday.toFixed(2) + " / " + goal + " hrs";
+
+  let percent = (totalToday / goal) * 100;
+  document.getElementById("progressBar").style.width = percent + "%";
+}
+
+function startStudy() {
+  document.getElementById("app").classList.add("focus");
+  document.getElementById("status").innerText = "Status: Studying...";
+  document.getElementById("rainSound").play();
+
+  document.getElementById("startBtn").disabled = true;
+  document.getElementById("stopBtn").disabled = false;
+
+  if (startTime !== 0) return;
+
+  startTime = Date.now();
+
+  interval = setInterval(() => {
+    let diff = Date.now() - startTime;
+
+    document.getElementById("hours").innerText =
+      (diff / (1000 * 60 * 60)).toFixed(2) + " hrs";
+
+  }, 1000);
+}
+
+function stopStudy() {
+document.getElementById("app").classList.remove("focus");
+  document.getElementById("status").innerText = "Status: Stopped";
+  document.getElementById("rainSound").pause();
+
+  document.getElementById("startBtn").disabled = false;
+  document.getElementById("stopBtn").disabled = true;
+
+  if (startTime === 0) return;
+
+  clearInterval(interval);
+
+  let end = Date.now();
+  let diff = (end - startTime) / (1000 * 60 * 60);
+  document.getElementById("goal").innerText =
+  "Today: " + totalToday.toFixed(2) + " / " + goal + " hrs";
+
+  totalToday += diff;
+  let percent = (totalToday / goal) * 100;
+document.getElementById("progressBar").style.width = percent + "%";
+  localStorage.setItem("totalToday", totalToday);
+
+  document.getElementById("goal").innerText =
+    "Today: " + totalToday.toFixed(2) + " / " + goal + " hrs";
+
+  startTime = 0;
+}
+let today = new Date().toDateString();
+
+if (lastDate !== today) {
+  let yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (lastDate === yesterday.toDateString()) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+
+  lastDate = today;
+
+  localStorage.setItem("streak", streak);
+  localStorage.setItem("lastDate", lastDate);
+
+  document.getElementById("streak").innerText =
+    "🔥 Streak: " + streak;
+}
+  </script>
+
+</body>
+</html>
